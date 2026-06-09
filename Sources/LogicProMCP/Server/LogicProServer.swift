@@ -117,7 +117,7 @@ actor LogicProServer {
 
             default:
                 return CallTool.Result(
-                    content: [.text("Unknown tool: \(name). Available: logic_transport, logic_tracks, logic_mixer, logic_midi, logic_edit, logic_navigate, logic_project, logic_system")],
+                    content: [.text(text: "Unknown tool: \(name). Available: logic_transport, logic_tracks, logic_mixer, logic_midi, logic_edit, logic_navigate, logic_project, logic_system", annotations: nil, _meta: nil)],
                     isError: true
                 )
             }

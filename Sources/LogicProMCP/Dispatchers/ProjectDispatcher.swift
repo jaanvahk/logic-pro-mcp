@@ -39,45 +39,45 @@ struct ProjectDispatcher {
         switch command {
         case "new":
             let result = await router.route(operation: "project.new")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "open":
             let path = params["path"]?.stringValue ?? ""
             guard !path.isEmpty else {
-                return CallTool.Result(content: [.text("open requires 'path' param")], isError: true)
+                return CallTool.Result(content: [.text(text: "open requires 'path' param", annotations: nil, _meta: nil)], isError: true)
             }
             let result = await router.route(
                 operation: "project.open",
                 params: ["path": path]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "save":
             let result = await router.route(operation: "project.save")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "save_as":
             let path = params["path"]?.stringValue ?? ""
             guard !path.isEmpty else {
-                return CallTool.Result(content: [.text("save_as requires 'path' param")], isError: true)
+                return CallTool.Result(content: [.text(text: "save_as requires 'path' param", annotations: nil, _meta: nil)], isError: true)
             }
             let result = await router.route(
                 operation: "project.save_as",
                 params: ["path": path]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "close":
             let result = await router.route(operation: "project.close")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "bounce":
             let result = await router.route(operation: "project.bounce")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "launch":
             if ProcessUtils.isLogicProRunning {
-                return CallTool.Result(content: [.text("Logic Pro is already running")], isError: false)
+                return CallTool.Result(content: [.text(text: "Logic Pro is already running", annotations: nil, _meta: nil)], isError: false)
             }
             let script = "tell application \"Logic Pro\" to activate"
             let process = Process()
@@ -86,14 +86,14 @@ struct ProjectDispatcher {
             do {
                 try process.run()
                 process.waitUntilExit()
-                return CallTool.Result(content: [.text("Logic Pro launched")], isError: false)
+                return CallTool.Result(content: [.text(text: "Logic Pro launched", annotations: nil, _meta: nil)], isError: false)
             } catch {
-                return CallTool.Result(content: [.text("Failed to launch Logic Pro: \(error)")], isError: true)
+                return CallTool.Result(content: [.text(text: "Failed to launch Logic Pro: \(error)", annotations: nil, _meta: nil)], isError: true)
             }
 
         case "quit":
             if !ProcessUtils.isLogicProRunning {
-                return CallTool.Result(content: [.text("Logic Pro is not running")], isError: false)
+                return CallTool.Result(content: [.text(text: "Logic Pro is not running", annotations: nil, _meta: nil)], isError: false)
             }
             let script = "tell application \"Logic Pro\" to quit"
             let process = Process()
@@ -102,14 +102,14 @@ struct ProjectDispatcher {
             do {
                 try process.run()
                 process.waitUntilExit()
-                return CallTool.Result(content: [.text("Logic Pro quit")], isError: false)
+                return CallTool.Result(content: [.text(text: "Logic Pro quit", annotations: nil, _meta: nil)], isError: false)
             } catch {
-                return CallTool.Result(content: [.text("Failed to quit Logic Pro: \(error)")], isError: true)
+                return CallTool.Result(content: [.text(text: "Failed to quit Logic Pro: \(error)", annotations: nil, _meta: nil)], isError: true)
             }
 
         default:
             return CallTool.Result(
-                content: [.text("Unknown project command: \(command). Available: new, open, save, save_as, close, bounce, launch, quit")],
+                content: [.text(text: "Unknown project command: \(command). Available: new, open, save, save_as, close, bounce, launch, quit", annotations: nil, _meta: nil)],
                 isError: true
             )
         }

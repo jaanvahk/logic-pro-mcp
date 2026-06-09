@@ -50,7 +50,7 @@ struct MixerDispatcher {
                 operation: "mixer.set_volume",
                 params: ["index": String(track), "volume": String(value)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_pan":
             let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
@@ -59,7 +59,7 @@ struct MixerDispatcher {
                 operation: "mixer.set_pan",
                 params: ["index": String(track), "pan": String(value)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_send":
             let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
@@ -69,7 +69,7 @@ struct MixerDispatcher {
                 operation: "mixer.set_send",
                 params: ["index": String(track), "send_index": String(bus), "level": String(value)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_output":
             let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
@@ -78,7 +78,7 @@ struct MixerDispatcher {
                 operation: "mixer.set_output",
                 params: ["index": String(track), "output": output]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_input":
             let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
@@ -87,7 +87,7 @@ struct MixerDispatcher {
                 operation: "mixer.set_input",
                 params: ["index": String(track), "input": input]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_master_volume":
             let value = params["value"]?.doubleValue ?? params["volume"]?.doubleValue ?? 0.0
@@ -95,7 +95,7 @@ struct MixerDispatcher {
                 operation: "mixer.set_master_volume",
                 params: ["volume": String(value)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "toggle_eq":
             let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
@@ -103,7 +103,7 @@ struct MixerDispatcher {
                 operation: "mixer.toggle_eq",
                 params: ["index": String(track)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "reset_strip":
             let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
@@ -111,7 +111,7 @@ struct MixerDispatcher {
                 operation: "mixer.reset_strip",
                 params: ["index": String(track)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "insert_plugin":
             let track = params["track"]?.intValue ?? params["track_index"]?.intValue ?? 0
@@ -121,7 +121,7 @@ struct MixerDispatcher {
                 operation: "plugin.insert",
                 params: ["track_index": String(track), "plugin_name": name, "slot": String(slot)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "bypass_plugin":
             let track = params["track"]?.intValue ?? params["track_index"]?.intValue ?? 0
@@ -131,11 +131,11 @@ struct MixerDispatcher {
                 operation: "plugin.bypass",
                 params: ["track_index": String(track), "slot": String(slot), "bypassed": String(bypassed)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         default:
             return CallTool.Result(
-                content: [.text("Unknown mixer command: \(command). Available: set_volume, set_pan, set_send, set_output, set_input, set_master_volume, toggle_eq, reset_strip, insert_plugin, bypass_plugin")],
+                content: [.text(text: "Unknown mixer command: \(command). Available: set_volume, set_pan, set_send, set_output, set_input, set_master_volume, toggle_eq, reset_strip, insert_plugin, bypass_plugin", annotations: nil, _meta: nil)],
                 isError: true
             )
         }

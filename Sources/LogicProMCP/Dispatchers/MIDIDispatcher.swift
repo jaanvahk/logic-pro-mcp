@@ -57,7 +57,7 @@ struct MIDIDispatcher {
                     "duration_ms": String(durationMs),
                 ]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "send_chord":
             // Accept either array of ints or comma-separated string
@@ -79,7 +79,7 @@ struct MIDIDispatcher {
                     "duration_ms": String(durationMs),
                 ]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "send_cc":
             let controller = params["controller"]?.intValue ?? 0
@@ -93,7 +93,7 @@ struct MIDIDispatcher {
                     "channel": String(channel),
                 ]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "send_program_change":
             let program = params["program"]?.intValue ?? 0
@@ -102,7 +102,7 @@ struct MIDIDispatcher {
                 operation: "midi.send_program_change",
                 params: ["program": String(program), "channel": String(channel)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "send_pitch_bend":
             let value = params["value"]?.intValue ?? 0
@@ -111,7 +111,7 @@ struct MIDIDispatcher {
                 operation: "midi.send_pitch_bend",
                 params: ["value": String(value), "channel": String(channel)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "send_aftertouch":
             let value = params["value"]?.intValue ?? 0
@@ -120,7 +120,7 @@ struct MIDIDispatcher {
                 operation: "midi.send_aftertouch",
                 params: ["value": String(value), "channel": String(channel)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "send_sysex":
             let data: String
@@ -135,7 +135,7 @@ struct MIDIDispatcher {
                 operation: "midi.send_sysex",
                 params: ["data": data]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "create_virtual_port":
             let name = params["name"]?.stringValue ?? "Virtual Port"
@@ -143,19 +143,19 @@ struct MIDIDispatcher {
                 operation: "midi.create_virtual_port",
                 params: ["name": name]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "mmc_play":
             let result = await router.route(operation: "mmc.play")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "mmc_stop":
             let result = await router.route(operation: "mmc.stop")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "mmc_record":
             let result = await router.route(operation: "mmc.record_strobe")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "mmc_locate":
             if let bar = params["bar"]?.intValue {
@@ -163,18 +163,18 @@ struct MIDIDispatcher {
                     operation: "mmc.locate",
                     params: ["bar": String(bar)]
                 )
-                return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
             }
             let time = params["time"]?.stringValue ?? "00:00:00:00"
             let result = await router.route(
                 operation: "mmc.locate",
                 params: ["time": time]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         default:
             return CallTool.Result(
-                content: [.text("Unknown MIDI command: \(command). Available: send_note, send_chord, send_cc, send_program_change, send_pitch_bend, send_aftertouch, send_sysex, create_virtual_port, mmc_play, mmc_stop, mmc_record, mmc_locate")],
+                content: [.text(text: "Unknown MIDI command: \(command). Available: send_note, send_chord, send_cc, send_program_change, send_pitch_bend, send_aftertouch, send_sysex, create_virtual_port, mmc_play, mmc_stop, mmc_record, mmc_locate", annotations: nil, _meta: nil)],
                 isError: true
             )
         }

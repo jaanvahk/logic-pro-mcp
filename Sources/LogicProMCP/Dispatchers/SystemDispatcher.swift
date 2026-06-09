@@ -63,27 +63,27 @@ struct SystemDispatcher {
                   "cache": \(cacheJSON)
                 }
                 """
-            return CallTool.Result(content: [.text(json)], isError: false)
+            return CallTool.Result(content: [.text(text: json, annotations: nil, _meta: nil)], isError: false)
 
         case "permissions":
             let status = PermissionChecker.check()
-            return CallTool.Result(content: [.text(status.summary)], isError: false)
+            return CallTool.Result(content: [.text(text: status.summary, annotations: nil, _meta: nil)], isError: false)
 
         case "refresh_cache":
             await cache.recordToolAccess()
             return CallTool.Result(
-                content: [.text("State refresh triggered. Cache will be updated on next poll cycle.")],
+                content: [.text(text: "State refresh triggered. Cache will be updated on next poll cycle.", annotations: nil, _meta: nil)],
                 isError: false
             )
 
         case "help":
             let category = params["category"]?.stringValue ?? "all"
             let helpText = Self.helpText(for: category)
-            return CallTool.Result(content: [.text(helpText)], isError: false)
+            return CallTool.Result(content: [.text(text: helpText, annotations: nil, _meta: nil)], isError: false)
 
         default:
             return CallTool.Result(
-                content: [.text("Unknown system command: \(command). Available: health, permissions, refresh_cache, help")],
+                content: [.text(text: "Unknown system command: \(command). Available: health, permissions, refresh_cache, help", annotations: nil, _meta: nil)],
                 isError: true
             )
         }

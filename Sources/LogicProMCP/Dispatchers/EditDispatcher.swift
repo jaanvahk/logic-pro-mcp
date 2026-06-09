@@ -37,39 +37,39 @@ struct EditDispatcher {
         switch command {
         case "undo":
             let result = await router.route(operation: "edit.undo")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "redo":
             let result = await router.route(operation: "edit.redo")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "cut":
             let result = await router.route(operation: "edit.cut")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "copy":
             let result = await router.route(operation: "edit.copy")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "paste":
             let result = await router.route(operation: "edit.paste")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "delete":
             let result = await router.route(operation: "edit.delete")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "select_all":
             let result = await router.route(operation: "edit.select_all")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "split":
             let result = await router.route(operation: "edit.split")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "join":
             let result = await router.route(operation: "edit.join")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "quantize":
             let value = params["value"]?.stringValue ?? "1/16"
@@ -77,31 +77,31 @@ struct EditDispatcher {
                 operation: "edit.quantize",
                 params: ["value": value]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "bounce_in_place":
             let result = await router.route(operation: "edit.bounce_in_place")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "normalize":
             let result = await router.route(operation: "edit.normalize")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "duplicate":
             let result = await router.route(operation: "edit.select_all")
             guard result.isSuccess else {
-                return CallTool.Result(content: [.text(result.message)], isError: true)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: true)
             }
             let copyResult = await router.route(operation: "edit.copy")
             guard copyResult.isSuccess else {
-                return CallTool.Result(content: [.text(copyResult.message)], isError: true)
+                return CallTool.Result(content: [.text(text: copyResult.message, annotations: nil, _meta: nil)], isError: true)
             }
             let pasteResult = await router.route(operation: "edit.paste")
-            return CallTool.Result(content: [.text(pasteResult.message)], isError: !pasteResult.isSuccess)
+            return CallTool.Result(content: [.text(text: pasteResult.message, annotations: nil, _meta: nil)], isError: !pasteResult.isSuccess)
 
         default:
             return CallTool.Result(
-                content: [.text("Unknown edit command: \(command). Available: undo, redo, cut, copy, paste, delete, select_all, split, join, quantize, bounce_in_place, normalize, duplicate")],
+                content: [.text(text: "Unknown edit command: \(command). Available: undo, redo, cut, copy, paste, delete, select_all, split, join, quantize, bounce_in_place, normalize, duplicate", annotations: nil, _meta: nil)],
                 isError: true
             )
         }

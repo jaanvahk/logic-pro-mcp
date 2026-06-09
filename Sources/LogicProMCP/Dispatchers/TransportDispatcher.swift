@@ -40,39 +40,39 @@ struct TransportDispatcher {
         switch command {
         case "play":
             let result = await router.route(operation: "transport.play")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "stop":
             let result = await router.route(operation: "transport.stop")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "record":
             let result = await router.route(operation: "transport.record")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "pause":
             let result = await router.route(operation: "transport.pause")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "rewind":
             let result = await router.route(operation: "transport.rewind")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "fast_forward":
             let result = await router.route(operation: "transport.fast_forward")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "toggle_cycle":
             let result = await router.route(operation: "transport.toggle_cycle")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "toggle_metronome":
             let result = await router.route(operation: "transport.toggle_metronome")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "toggle_count_in":
             let result = await router.route(operation: "transport.toggle_count_in")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_tempo":
             let tempo = params["tempo"]?.doubleValue
@@ -82,7 +82,7 @@ struct TransportDispatcher {
                 operation: "transport.set_tempo",
                 params: ["bpm": String(tempo)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "goto_position":
             if let bar = params["bar"]?.intValue {
@@ -90,7 +90,7 @@ struct TransportDispatcher {
                     operation: "transport.goto_position",
                     params: ["position": "\(bar).1.1.1"]
                 )
-                return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
             }
             let time = params["time"]?.stringValue
                 ?? params["position"]?.stringValue
@@ -99,7 +99,7 @@ struct TransportDispatcher {
                 operation: "transport.goto_position",
                 params: ["position": time]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_cycle_range":
             let start = params["start"]?.intValue ?? 1
@@ -108,11 +108,11 @@ struct TransportDispatcher {
                 operation: "transport.set_cycle_range",
                 params: ["start": "\(start).1.1.1", "end": "\(end).1.1.1"]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         default:
             return CallTool.Result(
-                content: [.text("Unknown transport command: \(command). Available: play, stop, record, pause, rewind, fast_forward, toggle_cycle, toggle_metronome, set_tempo, goto_position, set_cycle_range, toggle_count_in")],
+                content: [.text(text: "Unknown transport command: \(command). Available: play, stop, record, pause, rewind, fast_forward, toggle_cycle, toggle_metronome, set_tempo, goto_position, set_cycle_range, toggle_count_in", annotations: nil, _meta: nil)],
                 isError: true
             )
         }

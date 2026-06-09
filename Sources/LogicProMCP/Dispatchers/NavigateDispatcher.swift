@@ -47,7 +47,7 @@ struct NavigateDispatcher {
                 operation: "nav.goto_bar",
                 params: ["bar": String(bar)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "goto_marker":
             if let index = params["index"]?.intValue {
@@ -55,7 +55,7 @@ struct NavigateDispatcher {
                     operation: "nav.goto_marker",
                     params: ["index": String(index)]
                 )
-                return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
             }
             if let name = params["name"]?.stringValue {
                 let markers = await cache.getMarkers()
@@ -64,11 +64,11 @@ struct NavigateDispatcher {
                         operation: "nav.goto_marker",
                         params: ["index": String(marker.id)]
                     )
-                    return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                    return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
                 }
-                return CallTool.Result(content: [.text("No marker found matching '\(name)'")], isError: true)
+                return CallTool.Result(content: [.text(text: "No marker found matching '\(name)'", annotations: nil, _meta: nil)], isError: true)
             }
-            return CallTool.Result(content: [.text("goto_marker requires 'index' or 'name' param")], isError: true)
+            return CallTool.Result(content: [.text(text: "goto_marker requires 'index' or 'name' param", annotations: nil, _meta: nil)], isError: true)
 
         case "create_marker":
             let name = params["name"]?.stringValue ?? "Marker"
@@ -76,7 +76,7 @@ struct NavigateDispatcher {
                 operation: "nav.create_marker",
                 params: ["name": name]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "delete_marker":
             let index = params["index"]?.intValue ?? 0
@@ -84,7 +84,7 @@ struct NavigateDispatcher {
                 operation: "nav.delete_marker",
                 params: ["index": String(index)]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "rename_marker":
             let index = params["index"]?.intValue ?? 0
@@ -93,11 +93,11 @@ struct NavigateDispatcher {
                 operation: "nav.rename_marker",
                 params: ["index": String(index), "name": name]
             )
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "zoom_to_fit":
             let result = await router.route(operation: "nav.zoom_to_fit")
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "set_zoom":
             let level = params["level"]?.stringValue ?? "fit"
@@ -107,23 +107,23 @@ struct NavigateDispatcher {
                     operation: "nav.set_zoom_level",
                     params: ["level": "8"]
                 )
-                return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
             case "out":
                 let result = await router.route(
                     operation: "nav.set_zoom_level",
                     params: ["level": "2"]
                 )
-                return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
             case "fit":
                 let result = await router.route(operation: "nav.zoom_to_fit")
-                return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
             default:
                 // Treat as numeric zoom level
                 let result = await router.route(
                     operation: "nav.set_zoom_level",
                     params: ["level": level]
                 )
-                return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
             }
 
         case "toggle_view":
@@ -139,16 +139,16 @@ struct NavigateDispatcher {
             case "automation": operation = "automation.toggle_view"
             default:
                 return CallTool.Result(
-                    content: [.text("Unknown view: \(view). Available: mixer, piano_roll, score, step_editor, library, inspector, automation")],
+                    content: [.text(text: "Unknown view: \(view). Available: mixer, piano_roll, score, step_editor, library, inspector, automation", annotations: nil, _meta: nil)],
                     isError: true
                 )
             }
             let result = await router.route(operation: operation)
-            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         default:
             return CallTool.Result(
-                content: [.text("Unknown navigate command: \(command). Available: goto_bar, goto_marker, create_marker, delete_marker, rename_marker, zoom_to_fit, set_zoom, toggle_view")],
+                content: [.text(text: "Unknown navigate command: \(command). Available: goto_bar, goto_marker, create_marker, delete_marker, rename_marker, zoom_to_fit, set_zoom, toggle_view", annotations: nil, _meta: nil)],
                 isError: true
             )
         }
