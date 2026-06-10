@@ -156,4 +156,17 @@ enum AXHelpers {
     static func getDescription(_ element: AXUIElement) -> String? {
         getAttribute(element, kAXDescriptionAttribute)
     }
+
+    /// Get the on-screen frame of an element using AXPosition and AXSize.
+    static func getFrame(_ element: AXUIElement) -> CGRect? {
+        var posValue: AnyObject?
+        var sizeValue: AnyObject?
+        guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &posValue) == .success,
+              AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeValue) == .success else { return nil }
+        var pos = CGPoint.zero
+        var size = CGSize.zero
+        guard AXValueGetValue(posValue as! AXValue, .cgPoint, &pos),
+              AXValueGetValue(sizeValue as! AXValue, .cgSize, &size) else { return nil }
+        return CGRect(origin: pos, size: size)
+    }
 }

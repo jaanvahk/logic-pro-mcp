@@ -1,3 +1,4 @@
+import ApplicationServices
 import Foundation
 import MCP
 
@@ -81,9 +82,33 @@ struct SystemDispatcher {
             let helpText = Self.helpText(for: category)
             return CallTool.Result(content: [.text(text: helpText, annotations: nil, _meta: nil)], isError: false)
 
+        case "ax_debug":
+            let depth = params["depth"]?.intValue ?? 3
+            guard let window = AXLogicProElements.mainWindow() else {
+                return CallTool.Result(content: [.text(text: "Cannot get Logic Pro main window", annotations: nil, _meta: nil)], isError: true)
+            }
+            let tree = Self.dumpAXTree(window, depth: depth, indent: 0)
+            return CallTool.Result(content: [.text(text: tree, annotations: nil, _meta: nil)], isError: false)
+
+        case "track_debug":
+            var lines: [String] = []
+            guard AXLogicProElements.mainWindow() != nil else {
+                return CallTool.Result(content: [.text(text: "No main window", annotations: nil, _meta: nil)], isError: true)
+            }
+            if let headers = AXLogicProElements.getTrackHeaders() {
+                let rows = AXHelpers.getChildren(headers)
+                lines.append("getTrackHeaders: found, \(rows.count) children: \(rows.map { AXHelpers.getRole($0) ?? "?" })")
+                for (i, row) in rows.prefix(5).enumerated() {
+                    lines.append("  row[\(i)]: \(Self.dumpAXTree(row, depth: 4, indent: 0))")
+                }
+            } else {
+                lines.append("getTrackHeaders: nil")
+            }
+            return CallTool.Result(content: [.text(text: lines.joined(separator: "\n"), annotations: nil, _meta: nil)], isError: false)
+
         default:
             return CallTool.Result(
-                content: [.text(text: "Unknown system command: \(command). Available: health, permissions, refresh_cache, help", annotations: nil, _meta: nil)],
+                content: [.text(text: "Unknown system command: \(command). Available: health, permissions, refresh_cache, help, ax_debug", annotations: nil, _meta: nil)],
                 isError: true
             )
         }
@@ -254,5 +279,21 @@ struct SystemDispatcher {
                 for detailed command docs per category.
                 """
         }
+    }
+
+    private static func dumpAXTree(_ element: AXUIElement, depth: Int, indent: Int) -> String {
+        let role = AXHelpers.getRole(element) ?? "?"
+        let title = AXHelpers.getTitle(element).map { " title=\"\($0)\"" } ?? ""
+        let identifier = AXHelpers.getIdentifier(element).map { " id=\"\($0)\"" } ?? ""
+        let value: String
+        if let v: AnyObject = AXHelpers.getAttribute(element, "AXValue") {
+            value = " value=\"\(v)\""
+        } else { value = "" }
+        let line = String(repeating: "  ", count: indent) + "<\(role)\(title)\(identifier)\(value)>"
+        guard depth > 0 else { return line }
+        let children = AXHelpers.getChildren(element)
+        if children.isEmpty { return line }
+        let childLines = children.prefix(20).map { dumpAXTree($0, depth: depth - 1, indent: indent + 1) }
+        return ([line] + childLines).joined(separator: "\n")
     }
 }

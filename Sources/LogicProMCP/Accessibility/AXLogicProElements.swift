@@ -49,26 +49,30 @@ enum AXLogicProElements {
 
     // MARK: - Tracks
 
-    /// Find the track header area containing individual track rows.
+    /// Find the group containing AXLayoutItem track header rows.
+    /// Path: AXWindow → last AXGroup → AXSplitGroup → last AXSplitGroup → first AXScrollArea → first AXGroup
     static func getTrackHeaders() -> AXUIElement? {
         guard let window = mainWindow() else { return nil }
-        // Track headers are typically in a scrollable list/table area
-        if let area = AXHelpers.findDescendant(of: window, role: kAXListRole, identifier: "Track Headers") {
-            return area
-        }
-        // Fallback: look for an AXScrollArea containing AXRow or AXGroup children
-        if let area = AXHelpers.findDescendant(of: window, role: kAXScrollAreaRole, identifier: "Tracks") {
-            return area
-        }
-        return AXHelpers.findDescendant(of: window, role: kAXOutlineRole, maxDepth: 5)
+        let windowChildren = AXHelpers.getChildren(window)
+        // The tracks container is the last AXGroup child of the window
+        guard let tracksContainer = windowChildren.last(where: { AXHelpers.getRole($0) == kAXGroupRole }) else { return nil }
+        // It contains one top-level SplitGroup
+        guard let outerSplit = AXHelpers.findDescendant(of: tracksContainer, role: kAXSplitGroupRole, maxDepth: 3) else { return nil }
+        // The inner SplitGroup (second child) has the track headers and arrangement
+        guard let innerSplit = AXHelpers.getChildren(outerSplit).last(where: { AXHelpers.getRole($0) == kAXSplitGroupRole }) else { return nil }
+        // First ScrollArea is the track header list
+        guard let scrollArea = AXHelpers.getChildren(innerSplit).first(where: { AXHelpers.getRole($0) == kAXScrollAreaRole }) else { return nil }
+        // Its first AXGroup child contains the AXLayoutItem rows
+        return AXHelpers.getChildren(scrollArea).first(where: { AXHelpers.getRole($0) == kAXGroupRole })
     }
 
-    /// Find a track header at a specific index (0-based).
+    /// Find a track header row at a 1-based index. Rows are AXLayoutItem elements.
     static func findTrackHeader(at index: Int) -> AXUIElement? {
         guard let headers = getTrackHeaders() else { return nil }
-        let rows = AXHelpers.getChildren(headers)
-        guard index >= 0 && index < rows.count else { return nil }
-        return rows[index]
+        let rows = AXHelpers.getChildren(headers).filter { AXHelpers.getRole($0) == kAXLayoutItemRole }
+        let zeroIndex = index - 1
+        guard zeroIndex >= 0 && zeroIndex < rows.count else { return nil }
+        return rows[zeroIndex]
     }
 
     /// Enumerate all track header rows.
@@ -182,11 +186,21 @@ enum AXLogicProElements {
             ?? AXHelpers.findDescendant(of: header, role: kAXButtonRole, title: "R")
     }
 
-    /// Find the track name text field on a header.
+    /// Find the track name text field in the Inspector panel (AXList > AXGroup > AXTextField).
+    /// The Inspector always shows the selected track, so select the track first.
     static func findTrackNameField(trackIndex: Int) -> AXUIElement? {
-        guard let header = findTrackHeader(at: trackIndex) else { return nil }
-        return AXHelpers.findDescendant(of: header, role: kAXStaticTextRole, maxDepth: 4)
-            ?? AXHelpers.findDescendant(of: header, role: kAXTextFieldRole, maxDepth: 4)
+        guard let window = mainWindow() else { return nil }
+        // Inspector is an AXList containing groups with a "Track:" label + AXTextField
+        guard let list = AXHelpers.findDescendant(of: window, role: kAXListRole, maxDepth: 4) else { return nil }
+        let groups = AXHelpers.getChildren(list)
+        for group in groups {
+            let texts = AXHelpers.findAllDescendants(of: group, role: kAXStaticTextRole, maxDepth: 3)
+            let hasTrackLabel = texts.contains { (AXHelpers.getValue($0) as? String) == "Track:" }
+            if hasTrackLabel {
+                return AXHelpers.findDescendant(of: group, role: kAXTextFieldRole, maxDepth: 3)
+            }
+        }
+        return nil
     }
 
     // MARK: - Helpers

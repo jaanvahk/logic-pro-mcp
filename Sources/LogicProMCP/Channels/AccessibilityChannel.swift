@@ -1,3 +1,4 @@
+import AppKit
 import ApplicationServices
 import Foundation
 
@@ -211,10 +212,24 @@ actor AccessibilityChannel: Channel {
         guard let header = AXLogicProElements.findTrackHeader(at: index) else {
             return .error("Track at index \(index) not found")
         }
-        guard AXHelpers.performAction(header, kAXPressAction) else {
-            return .error("Failed to select track \(index)")
+        guard let frame = AXHelpers.getFrame(header) else {
+            return .error("Cannot get frame for track \(index)")
         }
+        clickTrackHeader(at: CGPoint(x: frame.midX, y: frame.midY))
         return .success("{\"selected\":\(index)}")
+    }
+
+    private func clickTrackHeader(at point: CGPoint) {
+        if let pid = ProcessUtils.logicProPID(),
+           let app = NSRunningApplication(processIdentifier: pid) {
+            app.activate()
+            Thread.sleep(forTimeInterval: 0.15)
+        }
+        let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left)
+        let up   = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp,   mouseCursorPosition: point, mouseButton: .left)
+        down?.post(tap: .cghidEventTap)
+        up?.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.2)
     }
 
     private func setTrackToggle(params: [String: String], button buttonName: String) -> ChannelResult {
@@ -241,10 +256,14 @@ actor AccessibilityChannel: Channel {
               let name = params["name"] else {
             return .error("Missing 'index' or 'name' parameter")
         }
+        // Click the track header to select it so the Inspector reflects it
+        if let header = AXLogicProElements.findTrackHeader(at: index),
+           let frame = AXHelpers.getFrame(header) {
+            clickTrackHeader(at: CGPoint(x: frame.midX, y: frame.midY))
+        }
         guard let field = AXLogicProElements.findTrackNameField(trackIndex: index) else {
             return .error("Cannot find name field for track \(index)")
         }
-        // Double-click to enter edit mode, then set value
         AXHelpers.performAction(field, kAXPressAction)
         AXHelpers.setAttribute(field, kAXValueAttribute, name as CFTypeRef)
         AXHelpers.performAction(field, kAXConfirmAction)
