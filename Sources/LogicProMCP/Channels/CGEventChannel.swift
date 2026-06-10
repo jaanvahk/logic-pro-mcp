@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 
@@ -107,6 +108,11 @@ actor CGEventChannel: Channel {
 
         guard let shortcut = Self.keyMap[operation] else {
             return .error("No keyboard shortcut mapped for: \(operation)")
+        }
+
+        if let app = NSRunningApplication(processIdentifier: pid) {
+            app.activate()
+            try? await Task.sleep(nanoseconds: 150_000_000) // 150ms for activation
         }
 
         let sent = postKeyEvent(keyCode: shortcut.keyCode, flags: shortcut.flags, pid: pid)

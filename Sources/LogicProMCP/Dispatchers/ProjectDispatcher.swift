@@ -76,9 +76,7 @@ struct ProjectDispatcher {
             return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
         case "launch":
-            if ProcessUtils.isLogicProRunning {
-                return CallTool.Result(content: [.text(text: "Logic Pro is already running", annotations: nil, _meta: nil)], isError: false)
-            }
+            let alreadyRunning = ProcessUtils.isLogicProRunning
             let script = "tell application \"Logic Pro\" to activate"
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
@@ -86,7 +84,8 @@ struct ProjectDispatcher {
             do {
                 try process.run()
                 process.waitUntilExit()
-                return CallTool.Result(content: [.text(text: "Logic Pro launched", annotations: nil, _meta: nil)], isError: false)
+                let msg = alreadyRunning ? "Logic Pro activated" : "Logic Pro launched"
+                return CallTool.Result(content: [.text(text: msg, annotations: nil, _meta: nil)], isError: false)
             } catch {
                 return CallTool.Result(content: [.text(text: "Failed to launch Logic Pro: \(error)", annotations: nil, _meta: nil)], isError: true)
             }

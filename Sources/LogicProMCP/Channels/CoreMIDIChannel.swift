@@ -76,6 +76,19 @@ actor CoreMIDIChannel: Channel {
             await engine.sendNoteOff(channel: channel, note: note)
             return .success("Note \(note) on ch \(channel) vel \(velocity) dur \(durationMs)ms")
 
+        case "midi.send_chord":
+            let notes = (params["notes"] ?? "").split(separator: ",").compactMap { UInt8($0.trimmingCharacters(in: .whitespaces)) }
+            guard !notes.isEmpty else {
+                return .error("send_chord requires 'notes' (comma-separated, e.g. '60,64,67')")
+            }
+            let channel = params["channel"].flatMap(UInt8.init) ?? 0
+            let velocity = params["velocity"].flatMap(UInt8.init) ?? 100
+            let durationMs = params["duration_ms"].flatMap(UInt64.init) ?? 500
+            for note in notes { await engine.sendNoteOn(channel: channel, note: note, velocity: velocity) }
+            try? await Task.sleep(nanoseconds: durationMs * 1_000_000)
+            for note in notes { await engine.sendNoteOff(channel: channel, note: note) }
+            return .success("Chord \(notes) on ch \(channel) vel \(velocity) dur \(durationMs)ms")
+
         case "midi.note_on":
             guard let note = params["note"].flatMap(UInt8.init) else {
                 return .error("note_on requires 'note' (0-127)")
