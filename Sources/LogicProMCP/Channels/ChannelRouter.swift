@@ -27,7 +27,9 @@ actor ChannelRouter {
 
         // Track state reading
         "track.get_tracks":           [.accessibility],
+        "track.count":                [.accessibility],
         "track.get_selected":         [.accessibility],
+        "track.select_range":         [.accessibility],
 
         // Track mutation — AX click, fallback to keyboard
         "track.select":               [.accessibility, .cgEvent],

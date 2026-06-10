@@ -63,11 +63,23 @@ struct TrackDispatcher {
 
         case "create_audio":
             let result = await router.route(operation: "track.create_audio")
-            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
+            guard result.isSuccess else {
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: true)
+            }
+            if let name = params["name"]?.stringValue, !name.isEmpty {
+                return await createAndName(name: name, router: router)
+            }
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: false)
 
         case "create_instrument":
             let result = await router.route(operation: "track.create_instrument")
-            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
+            guard result.isSuccess else {
+                return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: true)
+            }
+            if let name = params["name"]?.stringValue, !name.isEmpty {
+                return await createAndName(name: name, router: router)
+            }
+            return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: false)
 
         case "create_drummer":
             let result = await router.route(operation: "track.create_drummer")
@@ -76,6 +88,25 @@ struct TrackDispatcher {
         case "create_external_midi":
             let result = await router.route(operation: "track.create_external_midi")
             return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
+
+        case "delete_range":
+            let start = params["start"]?.intValue ?? 0
+            let end   = params["end"]?.intValue ?? 0
+            guard start > 0 && end >= start else {
+                return CallTool.Result(content: [.text(text: "delete_range requires 'start' and 'end' (1-based, end >= start)", annotations: nil, _meta: nil)], isError: true)
+            }
+            // Delete from end→start so indices stay valid as tracks are removed
+            for index in stride(from: end, through: start, by: -1) {
+                let sel = await router.route(operation: "track.select", params: ["index": String(index)])
+                guard sel.isSuccess else {
+                    return CallTool.Result(content: [.text(text: "Failed to select track \(index): \(sel.message)", annotations: nil, _meta: nil)], isError: true)
+                }
+                let del = await router.route(operation: "track.delete")
+                guard del.isSuccess else {
+                    return CallTool.Result(content: [.text(text: "Failed to delete track \(index): \(del.message)", annotations: nil, _meta: nil)], isError: true)
+                }
+            }
+            return CallTool.Result(content: [.text(text: "{\"deleted\":\(end - start + 1),\"range\":[\(start),\(end)]}", annotations: nil, _meta: nil)], isError: false)
 
         case "delete":
             if let index = params["index"]?.intValue {
@@ -150,9 +181,20 @@ struct TrackDispatcher {
 
         default:
             return CallTool.Result(
-                content: [.text(text: "Unknown track command: \(command). Available: select, create_audio, create_instrument, create_drummer, create_external_midi, delete, duplicate, rename, mute, solo, arm, set_color", annotations: nil, _meta: nil)],
+                content: [.text(text: "Unknown track command: \(command). Available: select, create_audio, create_instrument, create_drummer, create_external_midi, delete, delete_range, duplicate, rename, mute, solo, arm, set_color", annotations: nil, _meta: nil)],
                 isError: true
             )
         }
+    }
+
+    private static func createAndName(name: String, router: ChannelRouter) async -> CallTool.Result {
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        let countResult = await router.route(operation: "track.count")
+        guard let index = countResult.message.components(separatedBy: "\"count\":").last
+                .flatMap({ Int($0.prefix(while: { $0.isNumber })) }) else {
+            return CallTool.Result(content: [.text(text: "Created track but could not determine index to rename", annotations: nil, _meta: nil)], isError: false)
+        }
+        _ = await router.route(operation: "track.rename", params: ["index": String(index), "name": name])
+        return CallTool.Result(content: [.text(text: "{\"created\":true,\"name\":\"\(name)\",\"index\":\(index)}", annotations: nil, _meta: nil)], isError: false)
     }
 }

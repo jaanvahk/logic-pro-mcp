@@ -49,12 +49,17 @@ actor AccessibilityChannel: Channel {
         // MARK: - Track reads
         case "track.get_tracks":
             return getTracks()
+        case "track.count":
+            let count = AXLogicProElements.allTrackHeaders().filter { AXHelpers.getRole($0) == kAXLayoutItemRole }.count
+            return .success("{\"count\":\(count)}")
         case "track.get_selected":
             return getSelectedTrack()
 
         // MARK: - Track mutations
         case "track.select":
             return selectTrack(params: params)
+        case "track.select_range":
+            return selectTrackRange(params: params)
         case "track.set_mute":
             return setTrackToggle(params: params, button: "Mute")
         case "track.set_solo":
@@ -219,17 +224,50 @@ actor AccessibilityChannel: Channel {
         return .success("{\"selected\":\(index)}")
     }
 
+    private func selectTrackRange(params: [String: String]) -> ChannelResult {
+        guard let start = params["start"].flatMap(Int.init),
+              let end   = params["end"].flatMap(Int.init) else {
+            return .error("select_range requires 'start' and 'end' indices")
+        }
+        guard let pid = ProcessUtils.logicProPID() else {
+            return .error("Logic Pro is not running")
+        }
+        guard let firstHeader = AXLogicProElements.findTrackHeader(at: start),
+              let firstFrame  = AXHelpers.getFrame(firstHeader) else {
+            return .error("Cannot find track at index \(start)")
+        }
+        // Click the first track to select it
+        clickTrackHeader(at: CGPoint(x: firstFrame.midX, y: firstFrame.midY))
+        // Extend selection downward with Shift+Down arrow for each additional track
+        let steps = end - start
+        guard steps > 0 else { return .success("{\"selected_range\":[\(start),\(end)]}") }
+        guard let source = CGEventSource(stateID: .hidSystemState) else {
+            return .error("Failed to create CGEventSource")
+        }
+        for _ in 0..<steps {
+            guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 125, keyDown: true),
+                  let keyUp   = CGEvent(keyboardEventSource: source, virtualKey: 125, keyDown: false) else { continue }
+            keyDown.flags = .maskShift
+            keyUp.flags   = .maskShift
+            keyDown.postToPid(pid)
+            keyUp.postToPid(pid)
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        Thread.sleep(forTimeInterval: 0.1)
+        return .success("{\"selected_range\":[\(start),\(end)]}")
+    }
+
     private func clickTrackHeader(at point: CGPoint) {
         if let pid = ProcessUtils.logicProPID(),
            let app = NSRunningApplication(processIdentifier: pid) {
             app.activate()
-            Thread.sleep(forTimeInterval: 0.15)
+            Thread.sleep(forTimeInterval: 0.05)
         }
         let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left)
         let up   = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp,   mouseCursorPosition: point, mouseButton: .left)
         down?.post(tap: .cghidEventTap)
         up?.post(tap: .cghidEventTap)
-        Thread.sleep(forTimeInterval: 0.2)
+        Thread.sleep(forTimeInterval: 0.1)
     }
 
     private func setTrackToggle(params: [String: String], button buttonName: String) -> ChannelResult {

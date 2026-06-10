@@ -112,7 +112,7 @@ actor CGEventChannel: Channel {
 
         if let app = NSRunningApplication(processIdentifier: pid) {
             app.activate()
-            try? await Task.sleep(nanoseconds: 150_000_000) // 150ms for activation
+            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms for activation
         }
 
         let sent = postKeyEvent(keyCode: shortcut.keyCode, flags: shortcut.flags, pid: pid)
