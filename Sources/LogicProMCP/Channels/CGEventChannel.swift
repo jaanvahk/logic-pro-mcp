@@ -44,9 +44,11 @@ actor CGEventChannel: Channel {
         "transport.pause":            .key(49),         // Space
         "transport.rewind":           .key(123),        // Left arrow
         "transport.fast_forward":     .key(124),        // Right arrow
+        "transport.escape":            .key(53),         // Escape — dismiss dialogs/focus
+        "transport.goto_start":       .key(36),         // Return — go to bar 1
         "transport.toggle_cycle":     .key(8),          // C
         "transport.toggle_metronome": .key(40),         // K
-        "transport.goto_position":    .key(47),         // / (opens Go To Position)
+        "transport.goto_position":    .key(44),         // / (opens Go To Position)
 
         // Editing
         "edit.undo":                  .cmd(6),          // Cmd+Z
@@ -82,7 +84,7 @@ actor CGEventChannel: Channel {
         "nav.create_marker":          .cmdOption(39),   // (approximate)
         "nav.zoom_to_fit":            .key(6),          // Z
         "edit.join":                  .cmd(38),         // Cmd+J
-        "edit.quantize":              .key(44),         // Q (approximate)
+        "edit.quantize":              .key(12),         // Q
         "edit.bounce_in_place":       .cmdOption(11),   // (approximate)
 
         // Automation

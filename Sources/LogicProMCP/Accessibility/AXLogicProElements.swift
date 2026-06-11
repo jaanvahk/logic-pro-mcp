@@ -208,10 +208,13 @@ enum AXLogicProElements {
     private static func findButtonByDescriptionPrefix(
         in element: AXUIElement, prefix: String
     ) -> AXUIElement? {
-        let buttons = AXHelpers.findAllDescendants(of: element, role: kAXButtonRole, maxDepth: 4)
-        return buttons.first { button in
-            guard let desc = AXHelpers.getDescription(button) else { return false }
-            return desc.hasPrefix(prefix)
+        // Logic Pro uses AXCheckBox (not AXButton) for mute/solo/arm on track headers
+        for role in [kAXButtonRole, kAXCheckBoxRole, kAXRadioButtonRole] {
+            let elements = AXHelpers.findAllDescendants(of: element, role: role, maxDepth: 4)
+            if let found = elements.first(where: {
+                AXHelpers.getDescription($0)?.hasPrefix(prefix) == true
+            }) { return found }
         }
+        return nil
     }
 }

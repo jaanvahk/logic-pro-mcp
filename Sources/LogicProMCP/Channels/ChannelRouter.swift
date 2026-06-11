@@ -18,6 +18,8 @@ actor ChannelRouter {
         "transport.pause":            [.cgEvent, .coreMIDI, .appleScript],
         "transport.rewind":           [.cgEvent, .coreMIDI],
         "transport.fast_forward":     [.cgEvent, .coreMIDI],
+        "transport.escape":            [.cgEvent],
+        "transport.goto_start":       [.cgEvent],
         "transport.toggle_cycle":     [.cgEvent, .accessibility],
         "transport.toggle_metronome": [.cgEvent, .accessibility],
         "transport.set_tempo":        [.osc, .accessibility],
