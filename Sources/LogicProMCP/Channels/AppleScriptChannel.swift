@@ -35,7 +35,7 @@ actor AppleScriptChannel: Channel {
         // Transport fallbacks (AppleScript is last resort for these)
         case "transport.play":
             return await runScript(transportScript(action: "play"))
-        case "transport.stop":
+        case "transport.stop", "transport.force_stop":
             return await runScript(transportScript(action: "stop"))
         case "transport.record":
             return await runScript(transportScript(action: "record"))

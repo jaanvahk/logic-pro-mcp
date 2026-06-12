@@ -283,6 +283,27 @@ actor AccessibilityChannel: Channel {
         guard let button = finder(index) else {
             return .error("Cannot find \(buttonName) button on track \(index)")
         }
+
+        // Determine desired on/off state from params (key name varies by button type)
+        let paramName: String
+        switch buttonName {
+        case "Record": paramName = "armed"
+        case "Mute":   paramName = "muted"
+        case "Solo":   paramName = "soloed"
+        default:       paramName = "enabled"
+        }
+        if let rawDesired = params[paramName] {
+            let desired = (rawDesired == "true" || rawDesired == "1")
+            // Read current state so we only press if the state needs to change.
+            // Logic Pro arm/mute/solo buttons are AXCheckBox; value is 0 (off) or 1 (on).
+            if let raw = AXHelpers.getValue(button) as? NSNumber {
+                let current = raw.intValue != 0
+                if current == desired {
+                    return .success("{\"track\":\(index),\"button\":\"\(buttonName)\",\"state\":\(desired),\"changed\":false}")
+                }
+            }
+        }
+
         guard AXHelpers.performAction(button, kAXPressAction) else {
             return .error("Failed to click \(buttonName) on track \(index)")
         }

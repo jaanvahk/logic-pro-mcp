@@ -219,29 +219,81 @@ struct MIDIDispatcher {
             ]
         }
 
-        // Stop → close Piano Roll if open → rewind to bar 1 → arm → record
-        _ = await router.route(operation: "transport.stop")
-        try? await Task.sleep(nanoseconds: 150_000_000)
-        _ = await router.route(operation: "transport.escape")          // dismiss any dialog/focus
+        // ── Phase 1: stop and rewind to bar 1 ──────────────────────────────────
+        _ = await router.route(operation: "transport.force_stop")
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        _ = await router.route(operation: "mmc.locate", params: ["bar": "1"])
         try? await Task.sleep(nanoseconds: 100_000_000)
-        // Rewind enough bars to guarantee we reach bar 1 (each press = -1 bar)
-        for _ in 0..<(totalBars + 4) {
-            _ = await router.route(operation: "transport.rewind")
-            try? await Task.sleep(nanoseconds: 60_000_000)
-        }
-        try? await Task.sleep(nanoseconds: 150_000_000)
-        _ = await router.route(operation: "track.set_arm",
-                               params: ["index": String(trackIndex), "armed": "true"])
+        _ = await router.route(operation: "transport.goto_start")      // Return key — backup nav
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        _ = await router.route(operation: "transport.escape")
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        _ = await router.route(operation: "transport.force_stop")      // stop if goto_start played
         try? await Task.sleep(nanoseconds: 200_000_000)
-        _ = await router.route(operation: "transport.record")
 
-        // 100ms settle — enough for Logic to enter record mode
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        // ── Phase 2: ensure Piano Roll is closed, then clear stale notes ─────
+        // An open Piano Roll shifts the AX tree so getTrackHeaders() navigates to the
+        // wrong pane — arm silently fails and R starts playback instead of recording.
+        if !AXLogicProElements.verifyTrackHeadersAccessible() {
+            _ = await router.route(operation: "view.toggle_piano_roll")  // close it
+            try? await Task.sleep(nanoseconds: 400_000_000)
+        }
+        // Select the track first so Piano Roll opens for the right region.
+        _ = await router.route(operation: "track.select",
+                               params: ["index": String(trackIndex)])
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        // Piano Roll is now closed. Open fresh, delete any pre-existing notes, close again.
+        _ = await router.route(operation: "view.toggle_piano_roll")      // open
+        try? await Task.sleep(nanoseconds: 800_000_000)
+        _ = await router.route(operation: "edit.select_all")
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        _ = await router.route(operation: "edit.delete")
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        _ = await router.route(operation: "view.toggle_piano_roll")      // close
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        // Piano Roll is now definitively closed; AX track-header tree is intact.
 
+        // ── Phase 3: arm the record track ───────────────────────────────────
+        _ = await router.route(operation: "transport.escape")
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        var armResult = await router.route(
+            operation: "track.set_arm",
+            params: ["index": String(trackIndex), "armed": "true"]
+        )
+        if !armResult.isSuccess {
+            // Transient AX glitch — wait briefly and retry once
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            armResult = await router.route(
+                operation: "track.set_arm",
+                params: ["index": String(trackIndex), "armed": "true"]
+            )
+            if !armResult.isSuccess {
+                return CallTool.Result(
+                    content: [.text(
+                        text: "{\"error\":\"arm_failed\",\"track\":\(trackIndex),\"detail\":\"\(armResult.message)\"}",
+                        annotations: nil, _meta: nil)],
+                    isError: true
+                )
+            }
+        }
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // ── Phase 4: record ──────────────────────────────────────────────────
+        _ = await router.route(operation: "transport.force_stop")
+        try? await Task.sleep(nanoseconds: 150_000_000)
+
+        // Set t0 BEFORE posting R so the routing latency is accounted for.
+        // CGEventChannel sleeps 50 ms before posting the key, then Logic Pro needs
+        // ~38 ms to enter record mode — total ~88 ms from t0 to recording start.
+        // We shift every note target by recordingStartMs so beat 0.0 arrives exactly
+        // at the moment recording begins.
+        let recordingStartMs: Double = 95  // ms from t0 to when Logic starts capturing
         let t0 = DispatchTime.now().uptimeNanoseconds
+        _ = await router.route(operation: "transport.record")           // R key (posts ~50 ms after t0)
 
+        // ── Phase 5: send MIDI notes with precise Swift-level timing ─────────
         for hit in pattern {
-            let targetNs = UInt64(hit.beat * beatMs * 1_000_000)
+            let targetNs = UInt64((hit.beat * beatMs + recordingStartMs) * 1_000_000)
             let elapsed  = DispatchTime.now().uptimeNanoseconds - t0
             if targetNs > elapsed {
                 try? await Task.sleep(nanoseconds: targetNs - elapsed)
@@ -257,29 +309,21 @@ struct MIDIDispatcher {
             )
         }
 
-        // Wait out the rest of the recording window, then stop
-        let endNs   = UInt64(totalBeats * beatMs * 1_000_000)
+        let endNs   = UInt64((totalBeats * beatMs + recordingStartMs) * 1_000_000)
         let elapsed = DispatchTime.now().uptimeNanoseconds - t0
         if endNs > elapsed {
             try? await Task.sleep(nanoseconds: endNs - elapsed)
         }
 
-        _ = await router.route(operation: "transport.stop")
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        // ── Phase 6: stop and disarm ─────────────────────────────────────────
+        // Space first (stops recording/playback as a toggle from playing state),
+        // then AppleScript force_stop as a guaranteed fallback.
+        _ = await router.route(operation: "transport.stop")              // Space — stops recording
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        _ = await router.route(operation: "transport.force_stop")        // AppleScript stop — belt & suspenders
+        try? await Task.sleep(nanoseconds: 400_000_000)
         _ = await router.route(operation: "track.set_arm",
                                params: ["index": String(trackIndex), "armed": "false"])
-
-        // Auto-quantize: open Piano Roll → select all → Q → close Piano Roll
-        try? await Task.sleep(nanoseconds: 400_000_000)
-        _ = await router.route(operation: "transport.escape")        // clear any focused panel
-        try? await Task.sleep(nanoseconds: 150_000_000)
-        _ = await router.route(operation: "view.toggle_piano_roll")  // open
-        try? await Task.sleep(nanoseconds: 700_000_000)               // wait for it to load
-        _ = await router.route(operation: "edit.select_all")          // Cmd+A
-        try? await Task.sleep(nanoseconds: 200_000_000)
-        _ = await router.route(operation: "edit.quantize")            // Q
-        try? await Task.sleep(nanoseconds: 300_000_000)
-        _ = await router.route(operation: "view.toggle_piano_roll")  // close
 
         return CallTool.Result(
             content: [.text(

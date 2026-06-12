@@ -75,6 +75,15 @@ enum AXLogicProElements {
         return rows[zeroIndex]
     }
 
+    /// Returns true if the track-headers AX subtree is reachable and non-empty.
+    /// When the Piano Roll is open it shifts the AX navigation path so getTrackHeaders()
+    /// returns nil or the wrong element — use this as a cheap proxy for "Piano Roll is open
+    /// and disrupting AX navigation".
+    static func verifyTrackHeadersAccessible() -> Bool {
+        guard let headers = getTrackHeaders() else { return false }
+        return !AXHelpers.getChildren(headers).isEmpty
+    }
+
     /// Enumerate all track header rows.
     static func allTrackHeaders() -> [AXUIElement] {
         guard let headers = getTrackHeaders() else { return [] }

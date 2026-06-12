@@ -14,6 +14,7 @@ actor ChannelRouter {
         // Transport — keyboard shortcut first (reliable when focused), MMC fallback, then AppleScript
         "transport.play":             [.cgEvent, .coreMIDI, .appleScript],
         "transport.stop":             [.cgEvent, .coreMIDI, .appleScript],
+        "transport.force_stop":       [.appleScript],  // AppleScript "stop" is not a toggle — always stops
         "transport.record":           [.cgEvent, .coreMIDI, .appleScript],
         "transport.pause":            [.cgEvent, .coreMIDI, .appleScript],
         "transport.rewind":           [.cgEvent, .coreMIDI],
