@@ -197,26 +197,46 @@ struct MIDIDispatcher {
         let bars: Int      = params["bars"]?.intValue ?? (params["beats"]?.intValue ?? 2) / 4
         let totalBars      = max(1, bars)
         let channel        = params["channel"]?.intValue ?? 1
+        let style          = params["style"]?.stringValue ?? "straight"
 
         let beatMs         = 60_000.0 / tempo
         let totalBeats     = Double(totalBars * 4)   // assumes 4/4
         let noteDurMs      = max(40, Int(beatMs * 0.08))
 
-        // Build pattern: kick on beats 1&3, snare on 2&4, hi-hat on every 8th.
         struct Hit { let beat: Double; let notes: String }
         var pattern: [Hit] = []
-        for bar in 0..<totalBars {
-            let base = Double(bar * 4)
-            pattern += [
-                Hit(beat: base + 0.0, notes: "36,42"),
-                Hit(beat: base + 0.5, notes: "42"),
-                Hit(beat: base + 1.0, notes: "38,42"),
-                Hit(beat: base + 1.5, notes: "42"),
-                Hit(beat: base + 2.0, notes: "36,42"),
-                Hit(beat: base + 2.5, notes: "42"),
-                Hit(beat: base + 3.0, notes: "38,42"),
-                Hit(beat: base + 3.5, notes: "42"),
-            ]
+
+        if style == "shuffle" {
+            // Triplet upbeats land at 2/3 of each beat (swung 8th feel)
+            let u = 2.0 / 3.0
+            for bar in 0..<totalBars {
+                let base = Double(bar * 4)
+                pattern += [
+                    Hit(beat: base + 0.0,     notes: "36,42"),
+                    Hit(beat: base + u,        notes: "42"),
+                    Hit(beat: base + 1.0,      notes: "38,42"),
+                    Hit(beat: base + 1.0 + u,  notes: "42"),
+                    Hit(beat: base + 2.0,      notes: "36,42"),
+                    Hit(beat: base + 2.0 + u,  notes: "42"),
+                    Hit(beat: base + 3.0,      notes: "38,42"),
+                    Hit(beat: base + 3.0 + u,  notes: "42"),
+                ]
+            }
+        } else {
+            // Straight 8ths: kick on 1&3, snare on 2&4, hi-hat on every 8th
+            for bar in 0..<totalBars {
+                let base = Double(bar * 4)
+                pattern += [
+                    Hit(beat: base + 0.0, notes: "36,42"),
+                    Hit(beat: base + 0.5, notes: "42"),
+                    Hit(beat: base + 1.0, notes: "38,42"),
+                    Hit(beat: base + 1.5, notes: "42"),
+                    Hit(beat: base + 2.0, notes: "36,42"),
+                    Hit(beat: base + 2.5, notes: "42"),
+                    Hit(beat: base + 3.0, notes: "38,42"),
+                    Hit(beat: base + 3.5, notes: "42"),
+                ]
+            }
         }
 
         // ── Phase 1: stop and rewind to bar 1 ──────────────────────────────────
