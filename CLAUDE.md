@@ -108,3 +108,45 @@ let endNs = UInt64((totalBeats * beatMs + recordingStartMs) * 1_000_000)
 
 ### Do not use auto-quantize
 `record_pattern` deliberately omits auto-quantize (Q key after recording). Rhythms like shuffle require non-quantized timing. Notes land close enough to the grid that manual quantize works when needed.
+
+## Instrument selection (`set_instrument`)
+
+Loads a patch from Logic Pro's Library onto a software instrument track.
+
+```
+logic_tracks(command: "set_instrument", params: { index: Int, patch: String })
+```
+
+### How it works
+
+1. Selects the track (`track.select` → CGEvent mouse click)
+2. Checks if Library is open (`track.library_is_open` → `findLibraryPanel()` probe)
+3. If closed, opens it (`view.toggle_library` → Y key) and waits 400ms
+4. Navigates the Library's `AXBrowser` column browser:
+   - Reads categories from column 0 (Bass, Electronic Drums, Synthesizer, …)
+   - If `patch` matches a category name directly → clicks it
+   - Otherwise scans preferred categories first (Electronic Drums, Acoustic Drums, Percussion, Synthesizer, Bass), clicks each, reads column 1 patches, clicks match
+5. Closes Library if we opened it
+
+### AX tree path to Library content
+
+```
+AXWindow
+  → AXGroup (main area)
+    → AXGroup containing AXStaticText value="Library"   ← findLibraryPanel() anchor
+      → AXSplitGroup
+        → AXGroup → AXBrowser
+          → AXScrollArea (outer)
+            → AXScrollArea (column 0 — categories)
+              → AXList → AXStaticText items
+            → AXScrollArea (column 1 — patches, appears after clicking a category)
+              → AXList → AXStaticText items
+```
+
+`findLibraryItems(in:column:)` collects all `AXList` descendants of the browser; `column: 0` = first, `column: -1` = last (rightmost visible).
+
+### Known limitation
+The Library search field (`AXTextField` in the panel) does not filter when its value is set via AX or clipboard paste — Logic Pro requires real keyboard events to trigger the live filter. Column browser navigation is used instead. See TODO.txt item 3.
+
+### Debugging
+`logic_system(command: "ax_debug_library")` dumps the Library panel tree and lists visible items in both the category column and the current rightmost column. Use this to inspect patch names or diagnose navigation failures.
