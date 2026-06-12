@@ -6,3 +6,8 @@ TODO
 
 2. Select notes by pitch — click a key in the Piano Roll sidebar to select all
    notes of that pitch (e.g. hi-hat = MIDI 42), enabling per-note-type quantize.
+
+3. set_instrument: Library search field does not filter via AX/CGEvent — currently
+   navigates column browser by clicking categories. If Logic Pro's search could be
+   triggered (e.g. by finding a reliable keystroke path), it would be faster and
+   more reliable than scanning all categories.
