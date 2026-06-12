@@ -47,6 +47,8 @@ actor ChannelRouter {
         "track.set_arm":              [.accessibility, .cgEvent],
         "track.duplicate":            [.cgEvent],
         "track.set_color":            [.accessibility],
+        "track.library_is_open":      [.accessibility],
+        "track.select_library_patch": [.accessibility],
 
         // Mixer — OSC primary for continuous, AX fallback
         "mixer.get_state":            [.accessibility],

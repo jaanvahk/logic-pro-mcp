@@ -70,6 +70,10 @@ actor AccessibilityChannel: Channel {
             return renameTrack(params: params)
         case "track.set_color":
             return .error("Track color setting not supported via AX")
+        case "track.library_is_open":
+            return libraryIsOpen()
+        case "track.select_library_patch":
+            return selectLibraryPatch(params: params)
 
         // MARK: - Mixer reads
         case "mixer.get_state":
@@ -308,6 +312,89 @@ actor AccessibilityChannel: Channel {
             return .error("Failed to click \(buttonName) on track \(index)")
         }
         return .success("{\"track\":\(index),\"toggled\":\"\(buttonName)\"}")
+    }
+
+    // MARK: - Library / instrument selection
+
+    private func libraryIsOpen() -> ChannelResult {
+        let open = AXLogicProElements.findLibraryPanel() != nil
+        return .success("{\"open\":\(open)}")
+    }
+
+    private func selectLibraryPatch(params: [String: String]) -> ChannelResult {
+        guard let patch = params["patch"], !patch.isEmpty else {
+            return .error("Missing 'patch' parameter")
+        }
+        guard let panel = AXLogicProElements.findLibraryPanel() else {
+            return .error("Library panel not found — is the Library open?")
+        }
+
+        // Step 1: check first column (categories)
+        let categories = AXLogicProElements.findLibraryItems(in: panel, column: 0)
+        guard !categories.isEmpty else {
+            return .error("Library browser is empty")
+        }
+
+        // If the search term matches a category directly, click it and load
+        if let catMatch = categories.first(where: { $0.name.localizedCaseInsensitiveContains(patch) }) {
+            return clickLibraryElement(catMatch)
+        }
+
+        // Step 2: navigate each category looking for a patch match in column 2
+        // Priority: try drum-related categories first to avoid a full scan
+        let preferred = ["Electronic Drums", "Acoustic Drums", "Percussion", "Synthesizer", "Bass"]
+        let orderedCategories = categories.sorted { a, _ in preferred.contains(a.name) }
+
+        for category in orderedCategories {
+            guard let frame = AXHelpers.getFrame(category.element) else { continue }
+            clickAt(point: CGPoint(x: frame.midX, y: frame.midY))
+            Thread.sleep(forTimeInterval: 0.35)
+
+            let patches = AXLogicProElements.findLibraryItems(in: panel, column: -1)
+            // Skip if still on the category column (no second column loaded yet)
+            guard patches.first?.name != categories.first?.name else { continue }
+
+            if let patchMatch = patches.first(where: { $0.name.localizedCaseInsensitiveContains(patch) }) {
+                return clickLibraryElement(patchMatch)
+            }
+        }
+
+        // Not found — report what's visible in the last column
+        let lastItems = AXLogicProElements.findLibraryItems(in: panel, column: -1)
+        let preview = lastItems.prefix(8).map { $0.name }.joined(separator: ", ")
+        return .error("Patch '\(patch)' not found. Last column: \(preview.isEmpty ? "(none)" : preview)")
+    }
+
+    private func clickLibraryElement(_ item: (element: AXUIElement, name: String)) -> ChannelResult {
+        guard let frame = AXHelpers.getFrame(item.element) else {
+            return .error("Cannot click '\(item.name)' — no frame available")
+        }
+        clickAt(point: CGPoint(x: frame.midX, y: frame.midY))
+        Thread.sleep(forTimeInterval: 0.4)
+        return .success("{\"loaded\":\"\(item.name)\"}")
+    }
+
+    private func postKey(_ keyCode: CGKeyCode, flags: CGEventFlags = [], to pid: pid_t) {
+        guard let src = CGEventSource(stateID: .hidSystemState),
+              let down = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true),
+              let up   = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false) else { return }
+        down.flags = flags
+        up.flags   = flags
+        down.postToPid(pid)
+        up.postToPid(pid)
+    }
+
+    private func clickAt(point: CGPoint) {
+        if let pid = ProcessUtils.logicProPID(),
+           let app = NSRunningApplication(processIdentifier: pid) {
+            app.activate()
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left)
+        let up   = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp,   mouseCursorPosition: point, mouseButton: .left)
+        down?.post(tap: .cghidEventTap)
+        up?.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.1)
     }
 
     private func renameTrack(params: [String: String]) -> ChannelResult {

@@ -7,12 +7,14 @@ struct TrackDispatcher {
         description: """
             Track actions in Logic Pro. \
             Commands: select, create_audio, create_instrument, create_drummer, \
-            create_external_midi, delete, duplicate, rename, mute, solo, arm, set_color. \
+            create_external_midi, delete, duplicate, rename, mute, solo, arm, set_color, \
+            set_instrument. \
             Params by command: \
             select -> { index: Int } or { name: String }; \
             rename -> { index: Int, name: String }; \
             mute/solo/arm -> { index: Int, enabled: Bool }; \
             set_color -> { index: Int, color: Int } (Logic color index 0-24); \
+            set_instrument -> { index: Int, patch: String } (patch name from Logic Library); \
             create_* -> {} (creates at current position); \
             delete/duplicate -> { index: Int }
             """,
@@ -179,12 +181,56 @@ struct TrackDispatcher {
             )
             return CallTool.Result(content: [.text(text: result.message, annotations: nil, _meta: nil)], isError: !result.isSuccess)
 
+        case "set_instrument":
+            return await setInstrument(params: params, router: router)
+
         default:
             return CallTool.Result(
-                content: [.text(text: "Unknown track command: \(command). Available: select, create_audio, create_instrument, create_drummer, create_external_midi, delete, delete_range, duplicate, rename, mute, solo, arm, set_color", annotations: nil, _meta: nil)],
+                content: [.text(text: "Unknown track command: \(command). Available: select, create_audio, create_instrument, create_drummer, create_external_midi, delete, delete_range, duplicate, rename, mute, solo, arm, set_color, set_instrument", annotations: nil, _meta: nil)],
                 isError: true
             )
         }
+    }
+
+    private static func setInstrument(params: [String: Value], router: ChannelRouter) async -> CallTool.Result {
+        let index = params["index"]?.intValue ?? 0
+        guard let patch = params["patch"]?.stringValue, !patch.isEmpty else {
+            return CallTool.Result(
+                content: [.text(text: "set_instrument requires 'patch' param (patch name from Logic Library)", annotations: nil, _meta: nil)],
+                isError: true
+            )
+        }
+        // Select the track first so the Library shows its patches
+        let selResult = await router.route(operation: "track.select", params: ["index": String(index)])
+        guard selResult.isSuccess else {
+            return CallTool.Result(content: [.text(text: selResult.message, annotations: nil, _meta: nil)], isError: true)
+        }
+        try? await Task.sleep(nanoseconds: 150_000_000)
+
+        // Check if Library is already open so we can restore state afterward
+        let openCheck = await router.route(operation: "track.library_is_open")
+        let wasOpen = openCheck.message.contains("\"open\":true")
+
+        if !wasOpen {
+            _ = await router.route(operation: "view.toggle_library")
+            try? await Task.sleep(nanoseconds: 400_000_000)   // wait for panel animation
+        }
+
+        // Find and click the patch
+        let patchResult = await router.route(
+            operation: "track.select_library_patch",
+            params: ["patch": patch]
+        )
+
+        // Restore Library state
+        if !wasOpen {
+            _ = await router.route(operation: "view.toggle_library")
+        }
+
+        return CallTool.Result(
+            content: [.text(text: patchResult.message, annotations: nil, _meta: nil)],
+            isError: !patchResult.isSuccess
+        )
     }
 
     private static func createAndName(name: String, router: ChannelRouter) async -> CallTool.Result {

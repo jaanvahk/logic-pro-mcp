@@ -90,6 +90,19 @@ struct SystemDispatcher {
             let tree = Self.dumpAXTree(window, depth: depth, indent: 0)
             return CallTool.Result(content: [.text(text: tree, annotations: nil, _meta: nil)], isError: false)
 
+        case "ax_debug_library":
+            // Dump the Library panel subtree and visible items for debugging
+            guard let panel = AXLogicProElements.findLibraryPanel() else {
+                return CallTool.Result(content: [.text(text: "Library panel not found (is Library open?)", annotations: nil, _meta: nil)], isError: true)
+            }
+            let depth = params["depth"]?.intValue ?? 5
+            let tree = Self.dumpAXTree(panel, depth: depth, indent: 0)
+            let col0 = AXLogicProElements.findLibraryItems(in: panel, column: 0)
+            let colLast = AXLogicProElements.findLibraryItems(in: panel, column: -1)
+            let col0List = col0.isEmpty ? "(none)" : col0.map { $0.name }.joined(separator: ", ")
+            let colLastList = (colLast.isEmpty || colLast.map{$0.name} == col0.map{$0.name}) ? "(same as col0)" : colLast.map { $0.name }.joined(separator: ", ")
+            return CallTool.Result(content: [.text(text: "COL0: \(col0List)\nLAST: \(colLastList)\n\nTREE:\n\(tree)", annotations: nil, _meta: nil)], isError: false)
+
         case "track_debug":
             var lines: [String] = []
             guard AXLogicProElements.mainWindow() != nil else {

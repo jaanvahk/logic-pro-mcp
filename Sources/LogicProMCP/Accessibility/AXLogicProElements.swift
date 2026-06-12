@@ -90,6 +90,53 @@ enum AXLogicProElements {
         return AXHelpers.getChildren(headers)
     }
 
+    // MARK: - Library panel
+
+    /// Find the Library panel when it is open.
+    /// The Library is an AXGroup with a "Library" static text header, containing
+    /// an AXSplitGroup that holds category and patch lists.
+    /// Returns the AXSplitGroup content container, or nil if the Library is closed.
+    static func findLibraryPanel() -> AXUIElement? {
+        guard let window = mainWindow() else { return nil }
+        // Find the AXGroup that contains an AXStaticText with value "Library" —
+        // this is the Library panel header, unique in the window.
+        let groups = AXHelpers.findAllDescendants(of: window, role: kAXGroupRole, maxDepth: 5)
+        for group in groups {
+            let texts = AXHelpers.findAllDescendants(of: group, role: kAXStaticTextRole, maxDepth: 2)
+            let hasHeader = texts.contains { (AXHelpers.getValue($0) as? String) == "Library" }
+            guard hasHeader else { continue }
+            // Content lives in the AXSplitGroup child of this group
+            if let split = AXHelpers.findDescendant(of: group, role: kAXSplitGroupRole, maxDepth: 2) {
+                return split
+            }
+            return group
+        }
+        return nil
+    }
+
+    /// Find the search text field inside the Library panel.
+    static func findLibrarySearchField(in panel: AXUIElement) -> AXUIElement? {
+        AXHelpers.findDescendant(of: panel, role: kAXTextFieldRole, maxDepth: 4)
+    }
+
+    /// Return items from a specific column of the Library browser.
+    /// `column: 0` = first (categories), `column: -1` = last (rightmost visible).
+    /// The Library uses: AXBrowser → outer AXScrollArea → per-column AXScrollArea → AXList → AXStaticText.
+    static func findLibraryItems(in panel: AXUIElement, column: Int = 0) -> [(element: AXUIElement, name: String)] {
+        guard let browser = AXHelpers.findDescendant(of: panel, role: kAXBrowserRole, maxDepth: 4) else {
+            return []
+        }
+        // Collect all AXList descendants — each belongs to one browser column
+        let lists = AXHelpers.findAllDescendants(of: browser, role: kAXListRole, maxDepth: 6)
+        guard !lists.isEmpty else { return [] }
+        let list = column < 0 ? lists[lists.count + column] : (column < lists.count ? lists[column] : lists.last!)
+        let texts = AXHelpers.getChildren(list).filter { AXHelpers.getRole($0) == kAXStaticTextRole }
+        return texts.compactMap { el in
+            guard let name = AXHelpers.getValue(el) as? String, !name.isEmpty else { return nil }
+            return (el, name)
+        }
+    }
+
     // MARK: - Mixer
 
     /// Find the mixer area.
